@@ -1,13 +1,15 @@
 package com.stivechen.java.signinwithapple.service;
 
 import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
 import com.stivechen.java.signinwithapple.config.AppleIDConfig;
 import com.stivechen.java.signinwithapple.controller.form.AppleIDValidateForm;
 import com.stivechen.java.signinwithapple.dto.AppleIDTokenClaims;
 import com.stivechen.java.signinwithapple.dto.AppleIDValidateInfo;
 import com.stivechen.java.signinwithapple.dto.ApplePublicKey;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtParser;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.BeanUtils;
@@ -15,11 +17,17 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
 
 import java.math.BigInteger;
-import java.security.*;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.RSAPublicKeySpec;
 import java.util.List;
 import java.util.Map;
+
+import static com.stivechen.java.signinwithapple.constant.AppleIDConstant.*;
 
 /**
  * AppleID授权基础加解密层
@@ -29,7 +37,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Slf4j
-public abstract class SignInWithAppleBase {
+public abstract class BaseSignInWithApple {
 
     @Autowired
     private AppleIDConfig appleIDConfig;
@@ -46,6 +54,12 @@ public abstract class SignInWithAppleBase {
         appleIDValidateInfo.setGrant_type("authorization_code");//本次为授权验证
         appleIDValidateInfo.setRedirect_uri(appleIDConfig.getRedirectURI());
         appleIDValidateInfo.setClient_secret(this.buildClientSecret(identityClaims.getAud()));
+
+        if (log.isDebugEnabled()) {
+            log.debug("AppleID createAndValidateTokens param:{}", JSON.toJSONString(appleIDValidateInfo));
+        }
+
+        //发起http请求
 
         return identityClaims;
     }
@@ -69,8 +83,8 @@ public abstract class SignInWithAppleBase {
         claims.put("iss", appleIDConfig.getIss());
         claims.put("iat", now);
         claims.put("exp", now + appleIDConfig.getExpSeconds());
-        claims.put("aud","https://appleid.apple.com");//固定
-        claims.put("sub",clientId);//注意！这里是IdentityToken获取到的client_id
+        claims.put("aud", ISS_FIELD);//固定
+        claims.put("sub", clientId);//注意！这里是IdentityToken获取到的client_id
 
         //通过JWT加密生成
         return Jwts.builder()
@@ -100,7 +114,7 @@ public abstract class SignInWithAppleBase {
             log.debug("AppleID verifyToken scene:[{}] publicKey:{}", scene, publicKey);
         }
 
-        ApplePublicKey applePublicKey = JSONObject.parseObject(publicKey, ApplePublicKey.class);
+        ApplePublicKey applePublicKey = JSON.parseObject(publicKey, ApplePublicKey.class);
         if (null != applePublicKey) {
             List<ApplePublicKey.PKey> keys = applePublicKey.getKeys();
             if (keys != null && !keys.isEmpty()) {
@@ -152,7 +166,7 @@ public abstract class SignInWithAppleBase {
      * @param retryTimes
      * @return
      */
-    private PublicKey processPublicKey(ApplePublicKey applePublicKey, int retryTimes) throws Exception {
+    private PublicKey processPublicKey(ApplePublicKey applePublicKey, int retryTimes) {
         String modulus = null;
         String exponent = null;
 
@@ -171,14 +185,12 @@ public abstract class SignInWithAppleBase {
         PublicKey fianlKey = null;
 
         try {
-            keyFactory = KeyFactory.getInstance("RSA");
+            keyFactory = KeyFactory.getInstance(PUBLICKEY_ALGORITHM_RSA);
             fianlKey = keyFactory.generatePublic(rsaPublicKeySpec);
         } catch (NoSuchAlgorithmException e) {
             log.error("AppleID processPublicKey NoSuchAlgorithmException{}", e.getMessage());
-            throw e;//TODO 可自定义异常
         } catch (InvalidKeySpecException e) {
             log.error("AppleID processPublicKey InvalidKeySpecException{}", e.getMessage());
-            throw e;//TODO 可自定义异常
         }
 
         Assert.notNull(fianlKey, "AppleID processPublicKey pulicKey is null");
@@ -188,13 +200,26 @@ public abstract class SignInWithAppleBase {
 
     /**
      * 加工私钥
+     *
      * @param sourceKey
      * @return
      */
     private PrivateKey processPrivateKey(String sourceKey) {
+        PKCS8EncodedKeySpec pkcs8EncodedKeySpec = new PKCS8EncodedKeySpec(Base64.decodeBase64(sourceKey));
+
         PrivateKey privateKey = null;
+        KeyFactory keyFactory = null;
 
+        try {
+            keyFactory = KeyFactory.getInstance(PRIVATEKEY_ALGORITHM_EC);
+            privateKey = keyFactory.generatePrivate(pkcs8EncodedKeySpec);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("AppleID processPrivateKey NoSuchAlgorithmException e:{}", e.getMessage());
+        } catch (InvalidKeySpecException e) {
+            log.error("AppleID processPrivateKey InvalidKeySpecException e:{}", e.getMessage());
+        }
 
+        Assert.notNull(privateKey, "AppleID processPrivateKey privateKey is null");
 
         return privateKey;
     }
