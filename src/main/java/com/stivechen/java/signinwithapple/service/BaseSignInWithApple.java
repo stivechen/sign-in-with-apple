@@ -3,15 +3,20 @@ package com.stivechen.java.signinwithapple.service;
 import com.alibaba.fastjson.JSON;
 import com.stivechen.java.signinwithapple.config.AppleIDConfig;
 import com.stivechen.java.signinwithapple.controller.form.AppleIDValidateForm;
+import com.stivechen.java.signinwithapple.dto.AppleIDResDTO;
 import com.stivechen.java.signinwithapple.dto.AppleIDTokenClaims;
 import com.stivechen.java.signinwithapple.dto.AppleIDValidateInfo;
 import com.stivechen.java.signinwithapple.dto.ApplePublicKey;
+import com.stivechen.java.signinwithapple.exception.AppleIDResponseCodeEnum;
+import com.stivechen.java.signinwithapple.exception.SignInWithAppleException;
+import com.stivechen.java.signinwithapple.sao.AppleIDValidateSAO;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.util.Assert;
@@ -41,6 +46,8 @@ public abstract class BaseSignInWithApple {
 
     @Autowired
     private AppleIDConfig appleIDConfig;
+    @Autowired
+    private AppleIDValidateSAO appleIDValidateSAO;
 
 
     protected AppleIDTokenClaims createAndValidateTokens(AppleIDValidateForm form) {
@@ -60,8 +67,35 @@ public abstract class BaseSignInWithApple {
         }
 
         //发起http请求
+        AppleIDResDTO appleIDResDTO = this.appleIDValidateSAO.validateAppleIDTokens(appleIDValidateInfo);
+
+        checkResultInfo(appleIDResDTO);
+
+        AppleIDTokenClaims idTokenClaims = this.verifyToken(appleIDResDTO.getId_token(), "verifyId_token");
+
+        //identityClaims与idTokenClaims中的sub要一致
+        if (!identityClaims.getSub().equals(idTokenClaims.getSub())) {
+            log.error("AppleID createAndValidateTokens identityClaims's sub{}  idTokenClaims's sub{} is not equal",
+                    identityClaims.getSub(),idTokenClaims.getSub());
+            throw new SignInWithAppleException(AppleIDResponseCodeEnum.NOTEQUAL_TOKEN);
+        }
 
         return identityClaims;
+    }
+
+    /**
+     * 校验返回值
+     * 非空/有值校验
+     * @param appleIDResDTO
+     */
+    private void checkResultInfo(AppleIDResDTO appleIDResDTO) {
+        Assert.isNull(appleIDResDTO,"AppleID validateAppleIDTokens return null!");
+
+        if (StringUtils.isNotBlank(appleIDResDTO.getError()) || StringUtils.isBlank(appleIDResDTO.getId_token())) {
+            String errorMsg = appleIDResDTO.getError();
+            log.error("AppleID validateAppleIDTokens has error msg:{}",errorMsg);
+            throw new SignInWithAppleException(AppleIDResponseCodeEnum.BAD_RESPONSE);
+        }
     }
 
     /**
@@ -146,9 +180,9 @@ public abstract class BaseSignInWithApple {
         //若官网修改了publicKey，本方法无法实时获取，需要抛出异常
         //失败次数达到publicKey的size
         if (-1 == totalRetryTimes || totalRetryTimes == retryTimes) {
-            //TODO 可自定义异常
             log.error("AppleID verifyToken scene:[{}] totalRetryTimes:[{}]  retryTimes:[{}]  is failed!",
                     scene, totalRetryTimes, retryTimes);
+            throw new SignInWithAppleException(AppleIDResponseCodeEnum.ILLEGAL_PUBLICKEY);
         }
 
         if (log.isDebugEnabled()) {
