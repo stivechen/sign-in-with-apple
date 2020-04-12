@@ -12,7 +12,7 @@ import javax.validation.constraints.NotEmpty;
  * @since 1.0.0
  */
 @Data
-public class AppleIDValidateForm {
+public class AppleIDValidateForm extends BaseHttpRequestForm {
 
     @NotEmpty(message = "authorizationCode不能为空")
     private String authorizationCode;

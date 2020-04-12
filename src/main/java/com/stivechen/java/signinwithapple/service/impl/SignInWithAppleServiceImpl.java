@@ -1,6 +1,9 @@
 package com.stivechen.java.signinwithapple.service.impl;
 
+import com.stivechen.java.signinwithapple.controller.form.AppleIDValidateForm;
+import com.stivechen.java.signinwithapple.controller.vo.AppleIDValidateVO;
 import com.stivechen.java.signinwithapple.service.SignInWithAppleService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
@@ -11,8 +14,13 @@ import org.springframework.stereotype.Service;
  * @since 1.0.0
  */
 @Service
-public class SignInWithAppleServiceImpl implements SignInWithAppleService {
+@Slf4j
+public class SignInWithAppleServiceImpl extends BaseSignInWithApple implements SignInWithAppleService {
 
 
 
+    @Override
+    public AppleIDValidateVO validateAppleIdToken(AppleIDValidateForm form) {
+        return null;
+    }
 }

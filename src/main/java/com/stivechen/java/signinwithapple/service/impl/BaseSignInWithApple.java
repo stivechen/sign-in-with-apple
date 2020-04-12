@@ -1,4 +1,4 @@
-package com.stivechen.java.signinwithapple.service;
+package com.stivechen.java.signinwithapple.service.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.stivechen.java.signinwithapple.config.AppleIDConfig;
