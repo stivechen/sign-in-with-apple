@@ -15,6 +15,8 @@ public enum AppleIDResponseCodeEnum implements ResponseCodeEnum {
 
     NOTEQUAL_TOKEN("400002","验签不一致"),
 
+    APPLEID_RESPONSE_ERROR("400003","请求appleid验证失败"),
+
     SYSTEM_ERROR("500000","系统异常,请稍后重试");
 
     private String code;

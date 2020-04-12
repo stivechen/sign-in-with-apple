@@ -45,4 +45,6 @@ public class AppleIDConfig {
      */
     private String expSeconds;
 
+    private String appleIDValidateURL;
+
 }
