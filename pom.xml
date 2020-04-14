@@ -11,7 +11,7 @@
 	<groupId>com.stivechen.java</groupId>
 	<artifactId>signinwithapple</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>signinwithapple</name>
+	<name>sign-in-with-apple</name>
 	<description>Demo project for Spring Boot</description>
 
 	<properties>
