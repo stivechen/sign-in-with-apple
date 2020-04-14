@@ -26,7 +26,7 @@ public class GlobalExceptionHandler {
     }
 
     @ResponseBody
-    @ExceptionHandler(value = BizException.class)
+    @ExceptionHandler(value = Exception.class)
     public ErrorInfo exceptionHandler (HttpServletRequest req, Exception e) {
         log.error("GlobalExceptionHandler exceptionHandler e:{}", JSON.toJSONString(e));
         return ErrorInfo.error(req, e);

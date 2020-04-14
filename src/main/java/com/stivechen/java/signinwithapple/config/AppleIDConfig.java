@@ -2,7 +2,9 @@ package com.stivechen.java.signinwithapple.config;
 
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+
 
 /**
  * AppleID加解密配置
@@ -11,8 +13,10 @@ import org.springframework.stereotype.Component;
  * @create 2020/4/6
  * @since 1.0.0
  */
+
 @Component
-@ConfigurationProperties(prefix = "appleID_verify")
+@PropertySource(value = {"classpath:config/appleID.properties"})
+@ConfigurationProperties
 @Data
 public class AppleIDConfig {
 
