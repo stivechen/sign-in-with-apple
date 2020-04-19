@@ -4,6 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.annotation.Validated;
+
+import javax.validation.constraints.NotEmpty;
 
 
 /**
@@ -17,6 +20,7 @@ import org.springframework.stereotype.Component;
 @Component
 @PropertySource(value = {"classpath:config/appleID.properties"})
 @ConfigurationProperties
+@Validated//启动时校验
 @Data
 public class AppleIDConfig {
 
@@ -28,6 +32,7 @@ public class AppleIDConfig {
     /**
      * developer account private key
      */
+    @NotEmpty
     private String privateKey;
 
     /**

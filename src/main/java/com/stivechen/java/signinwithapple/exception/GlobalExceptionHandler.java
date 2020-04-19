@@ -1,6 +1,5 @@
 package com.stivechen.java.signinwithapple.exception;
 
-import com.alibaba.fastjson.JSON;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -22,13 +21,14 @@ public class GlobalExceptionHandler {
     @ResponseBody
     @ExceptionHandler(value = BizException.class)
     public ErrorInfo bizExceptionHandler (HttpServletRequest req, BizException e) {
+        log.error("GlobalExceptionHandler bizExceptionHandler code:{} msg:{}", e.getCode(), e.getMsg());
         return ErrorInfo.bizError(req,e);
     }
 
     @ResponseBody
     @ExceptionHandler(value = Exception.class)
     public ErrorInfo exceptionHandler (HttpServletRequest req, Exception e) {
-        log.error("GlobalExceptionHandler exceptionHandler e:{}", JSON.toJSONString(e));
+        log.error("GlobalExceptionHandler exceptionHandler e:{}", e.getMessage());
         return ErrorInfo.error(req, e);
     }
 }

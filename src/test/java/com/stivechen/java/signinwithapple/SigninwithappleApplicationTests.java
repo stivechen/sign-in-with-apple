@@ -6,9 +6,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.validation.annotation.Validated;
 
 @SpringBootTest
 @PropertySource(value = {"classpath:config/appleID.properties"})//使用@Value注解方式
+@Validated
 class SigninwithappleApplicationTests {
 
 	@Autowired

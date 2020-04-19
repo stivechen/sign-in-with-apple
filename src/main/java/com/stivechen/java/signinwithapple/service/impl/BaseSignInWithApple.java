@@ -160,7 +160,7 @@ public abstract class BaseSignInWithApple {
         do {
             try {
                 JwtParser jwtParser = Jwts.parser().setSigningKey(this.processPublicKey(applePublicKey, retryTimes));
-                jwtParser.requireIssuer("https://appleid.apple.com");//官网要求
+                jwtParser.requireIssuer(ISS_FIELD);//官网要求
                 jwtParser.requireAudience(appleIDConfig.getClientID());//必须包配置的client_id
                 Claims body = jwtParser.parseClaimsJws(token).getBody();//获取到JWT的body内容
 

@@ -29,11 +29,11 @@ public enum AppleIDResponseCodeEnum implements ResponseCodeEnum {
 
     @Override
     public String getCode() {
-        return null;
+        return code;
     }
 
     @Override
     public String getMsg() {
-        return null;
+        return msg;
     }
 }
