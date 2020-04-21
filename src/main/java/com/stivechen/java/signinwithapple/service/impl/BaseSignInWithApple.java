@@ -76,7 +76,7 @@ public abstract class BaseSignInWithApple {
         //identityClaims与idTokenClaims中的sub要一致
         if (!identityClaims.getSub().equals(idTokenClaims.getSub())) {
             log.error("AppleID createAndValidateTokens identityClaims's sub{}  idTokenClaims's sub{} is not equal",
-                    identityClaims.getSub(),idTokenClaims.getSub());
+                    identityClaims.getSub(), idTokenClaims.getSub());
             throw new SignInWithAppleException(AppleIDResponseCodeEnum.NOTEQUAL_TOKEN);
         }
 
@@ -86,14 +86,15 @@ public abstract class BaseSignInWithApple {
     /**
      * 校验返回值
      * 非空/有值校验
+     *
      * @param appleIDResDTO
      */
     private void checkResultInfo(AppleIDResDTO appleIDResDTO) {
-        Assert.isNull(appleIDResDTO,"AppleID validateAppleIDTokens return null!");
+        Assert.isNull(appleIDResDTO, "AppleID validateAppleIDTokens return null!");
 
         if (StringUtils.isNotBlank(appleIDResDTO.getError()) || StringUtils.isBlank(appleIDResDTO.getId_token())) {
             String errorMsg = appleIDResDTO.getError();
-            log.error("AppleID validateAppleIDTokens has error msg:{}",errorMsg);
+            log.error("AppleID validateAppleIDTokens has error msg:{}", errorMsg);
             throw new SignInWithAppleException(AppleIDResponseCodeEnum.BAD_RESPONSE);
         }
     }
