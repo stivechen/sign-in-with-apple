@@ -22,6 +22,9 @@ class AppleIDValidateSAOTest {
     @Autowired
     AppleIDValidateSAO appleIDValidateSAO;
 
+    /**
+     * 获取公钥test
+     */
     @Test
     void getAppleIdPublicKey() {
 
