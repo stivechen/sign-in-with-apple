@@ -139,16 +139,11 @@ public abstract class BaseSignInWithApple {
      */
     private AppleIDTokenClaims verifyToken(String token, String scene) {
         AppleIDTokenClaims tokenClaims = new AppleIDTokenClaims();
-        String publicKey = appleIDConfig.getPublicKey();
         //因为https://appleid.apple.com/auth/keys提供了两个key，且会变，差点出事故，f**k
+        ApplePublicKey applePublicKey = appleIDValidateSAO.getAppleIdPublicKey();
         int retryTimes = 0;
         int totalRetryTimes = -1;
 
-        if (log.isDebugEnabled()) {
-            log.debug("AppleID verifyToken scene:[{}] publicKey:{}", scene, publicKey);
-        }
-
-        ApplePublicKey applePublicKey = JSON.parseObject(publicKey, ApplePublicKey.class);
         if (null != applePublicKey) {
             List<ApplePublicKey.PKey> keys = applePublicKey.getKeys();
             if (keys != null && !keys.isEmpty()) {

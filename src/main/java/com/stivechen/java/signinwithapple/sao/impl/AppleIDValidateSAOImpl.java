@@ -2,8 +2,10 @@ package com.stivechen.java.signinwithapple.sao.impl;
 
 import com.alibaba.fastjson.JSON;
 import com.stivechen.java.signinwithapple.config.AppleIDConfig;
+import com.stivechen.java.signinwithapple.config.HttpClientConfig;
 import com.stivechen.java.signinwithapple.dto.AppleIDResDTO;
 import com.stivechen.java.signinwithapple.dto.AppleIDValidateInfo;
+import com.stivechen.java.signinwithapple.dto.ApplePublicKey;
 import com.stivechen.java.signinwithapple.exception.AppleIDResponseCodeEnum;
 import com.stivechen.java.signinwithapple.exception.SignInWithAppleException;
 import com.stivechen.java.signinwithapple.sao.AppleIDValidateSAO;
@@ -15,6 +17,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.config.SocketConfig;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -26,7 +29,6 @@ import org.apache.http.protocol.HTTP;
 import org.apache.http.util.EntityUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.PreDestroy;
@@ -49,6 +51,8 @@ public class AppleIDValidateSAOImpl implements AppleIDValidateSAO {
 
     @Autowired
     private AppleIDConfig appleIDConfig;
+    @Autowired
+    private HttpClientConfig httpClientConfig;
 
     private volatile CloseableHttpClient httpClient;
     private volatile PoolingHttpClientConnectionManager connManager;//http请求线程池
@@ -116,25 +120,83 @@ public class AppleIDValidateSAOImpl implements AppleIDValidateSAO {
         return appleIDResDTO;
     }
 
+    @Override
+    public ApplePublicKey getAppleIdPublicKey() {
+
+        ApplePublicKey applePublicKey = new ApplePublicKey();
+
+        CloseableHttpResponse httpResponse = null;
+        HttpGet httpGet = new HttpGet(appleIDConfig.getAppleIDPublicKeyURL());
+
+        String responseResultData = null;
+
+        try {
+            httpResponse = httpClient.execute(httpGet);
+
+            if (null != httpResponse) {
+                int statusCode = httpResponse.getStatusLine().getStatusCode();
+                HttpEntity httpEntity = httpResponse.getEntity();
+                //4XX-5XX
+                if (statusCode >= HttpStatus.SC_BAD_REQUEST) {
+                    log.error("AppleID getAppleIdPublicKey http statusCode:{}", statusCode);
+                    throw new SignInWithAppleException(AppleIDResponseCodeEnum.APPLEID_GETPUBLICKEY_FAIL);
+
+                } else {
+                    responseResultData = EntityUtils.toString(httpEntity, Consts.UTF_8);
+
+                    if (log.isDebugEnabled()) {
+                        log.debug("AppleID getAppleIdPublicKey get httpRequest result:[{}]", responseResultData);
+                    }
+                }
+            }
+
+            if (StringUtils.isNoneEmpty(responseResultData)) {
+                applePublicKey = JSON.parseObject(responseResultData, ApplePublicKey.class);
+            }
+
+        } catch (IOException e) {
+            log.error("AppleID getAppleIdPublicKey has IOException:{}", e.getMessage());
+            throw new SignInWithAppleException(AppleIDResponseCodeEnum.BAD_RESPONSE);
+        } finally {
+            //关闭，放回线程池
+            if (null != httpResponse) {
+                try {
+                    httpResponse.close();
+                } catch (IOException e) {
+                    log.error("AppleID getAppleIdPublicKey httpResponse close has error!");
+                }
+            }
+        }
+
+        if (log.isDebugEnabled()) {
+            log.debug("AppleID getAppleIdPublicKey return publicKey:{}", JSON.toJSONString(applePublicKey));
+        }
+
+        return applePublicKey;
+    }
+
+
 
     /**
-     * ==========处理httpClient线程池，数据配置参考官方文档：http://hc.apache.org/index.html==========
+     * ==========处理httpClient线程池，数据配置参考官方文档：http://hc.apache.org/index.html ==========
      */
 
     @PostConstruct
     public void init() {
-        //TODO 最好做成可配置
+
         connManager = new PoolingHttpClientConnectionManager();
-        connManager.setMaxTotal(100);//最大连接数
-        connManager.setDefaultMaxPerRoute(100);//每个路由最大连接数
-        connManager.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(5000).build());//接受数据等待超时时间ms
+        connManager.setMaxTotal(httpClientConfig.getConnManagerMaxTotal());//最大连接数
+        connManager.setDefaultMaxPerRoute(httpClientConfig.getConnManagerDefaultMaxPerRoute());//每个路由最大连接数
+        connManager.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(httpClientConfig.getConnManagerSoTimeout())//接受数据等待超时时间ms
+                .build());
 
         RequestConfig requestConfig = RequestConfig.custom()
-                .setConnectTimeout(1000)//连接超时时间ms
-                .setSocketTimeout(5000)//读取数据超时ms
-                .setConnectionRequestTimeout(500)//从连接池获取连接超时时间ms
+                .setConnectTimeout(httpClientConfig.getReqConnectTimeout())//连接超时时间ms
+                .setSocketTimeout(httpClientConfig.getReqSocketTimeout())//读取数据超时ms
+                .setConnectionRequestTimeout(httpClientConfig.getConnRequestTimeout())//从连接池获取连接超时时间ms
                 .build();
-        StandardHttpRequestRetryHandler retryHandler = new StandardHttpRequestRetryHandler(3, true);//重试次数
+        StandardHttpRequestRetryHandler retryHandler = new StandardHttpRequestRetryHandler(httpClientConfig.getRetryCount(),
+                true);//重试次数
 
         httpClient = HttpClients.custom()
                 .setConnectionManager(connManager)

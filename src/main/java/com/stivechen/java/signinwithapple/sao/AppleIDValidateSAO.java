@@ -2,6 +2,7 @@ package com.stivechen.java.signinwithapple.sao;
 
 import com.stivechen.java.signinwithapple.dto.AppleIDResDTO;
 import com.stivechen.java.signinwithapple.dto.AppleIDValidateInfo;
+import com.stivechen.java.signinwithapple.dto.ApplePublicKey;
 
 /**
  * 通过httpClient请求apple服务器
@@ -20,5 +21,12 @@ public interface AppleIDValidateSAO {
      * @return
      */
     AppleIDResDTO validateAppleIDTokens(AppleIDValidateInfo validateInfo);
+
+
+    /**
+     * 获取appleId publickey
+     * @return
+     */
+    ApplePublicKey getAppleIdPublicKey();
 
 }

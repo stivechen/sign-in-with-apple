@@ -17,6 +17,8 @@ public enum AppleIDResponseCodeEnum implements ResponseCodeEnum {
 
     APPLEID_RESPONSE_ERROR("400003","请求appleid验证失败"),
 
+    APPLEID_GETPUBLICKEY_FAIL("400004","获取appleId publicKey失败"),
+
     SYSTEM_ERROR("500000","系统异常,请稍后重试");
 
     private String code;

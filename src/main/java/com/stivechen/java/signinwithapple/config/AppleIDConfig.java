@@ -25,11 +25,6 @@ import javax.validation.constraints.NotEmpty;
 public class AppleIDConfig {
 
     /**
-     * https://appleid.apple.com/auth/keys获取
-     */
-    private String publicKey;
-
-    /**
      * developer account private key
      */
     @NotEmpty
@@ -55,5 +50,8 @@ public class AppleIDConfig {
     private String expSeconds;
 
     private String appleIDValidateURL;
+
+    /**获取appleid 公钥地址 https://appleid.apple.com/auth/keys*/
+    private String appleIDPublicKeyURL;
 
 }
