@@ -140,10 +140,11 @@ public abstract class BaseSignInWithApple {
     private AppleIDTokenClaims verifyToken(String token, String scene) {
         AppleIDTokenClaims tokenClaims = new AppleIDTokenClaims();
         //因为https://appleid.apple.com/auth/keys提供了两个key，且会变，差点出事故，f**k
-        ApplePublicKey applePublicKey = appleIDValidateSAO.getAppleIdPublicKey();
         int retryTimes = 0;
         int totalRetryTimes = -1;
 
+        ApplePublicKey applePublicKey = appleIDValidateSAO.getAppleIdPublicKey();
+        //TODO 待改造为guava
         if (null != applePublicKey) {
             List<ApplePublicKey.PKey> keys = applePublicKey.getKeys();
             if (keys != null && !keys.isEmpty()) {
