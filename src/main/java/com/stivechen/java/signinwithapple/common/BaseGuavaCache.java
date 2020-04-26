@@ -30,7 +30,7 @@ public abstract class BaseGuavaCache<K, V> {
     /**
      * 缓存刷新周期时间格式
      */
-    protected TimeUnit refreshTimeunit = TimeUnit.MINUTES;
+    protected TimeUnit refreshTimeunit = TimeUnit.HOURS;
     /**
      * 缓存过期时间（可选择
      */
@@ -38,7 +38,7 @@ public abstract class BaseGuavaCache<K, V> {
     /**
      * 缓存刷新周期时间格式
      */
-    protected TimeUnit expireTimeunit = TimeUnit.HOURS;
+    protected TimeUnit expireTimeunit = TimeUnit.DAYS;
     /**
      * 缓存最大容量
      */
@@ -60,7 +60,7 @@ public abstract class BaseGuavaCache<K, V> {
      * @param key
      * @return
      */
-    protected abstract V getValueWhenExpired(K key);
+    protected abstract V getValueWhenExpired(K key) throws Exception;
 
     /**
      * 获取缓存
@@ -85,7 +85,7 @@ public abstract class BaseGuavaCache<K, V> {
      * @param defaultValue
      * @return
      */
-    public V getValueOrDefault(K key, V defaultValue) {
+    public V getValueOrDefault(K key, V defaultValue) throws Exception{
         try {
             return getCache().get(key);
         } catch (Exception e) {
@@ -95,7 +95,7 @@ public abstract class BaseGuavaCache<K, V> {
         }
     }
 
-    public long getSize() {
+    public long getSize() throws Exception {
         try {
             return getCache().size();
         } catch (Exception e) {
@@ -169,6 +169,7 @@ public abstract class BaseGuavaCache<K, V> {
                                 public ListenableFuture<V> reload(final K key,
                                                                   V oldValue) throws Exception {
                                     return refreshPool.submit(new Callable<V>() {
+                                        @Override
                                         public V call() throws Exception {
                                             log.debug("reload!" + key);
                                             return getValueWhenExpired(key);

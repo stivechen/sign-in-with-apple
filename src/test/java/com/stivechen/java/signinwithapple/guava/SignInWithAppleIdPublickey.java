@@ -15,41 +15,24 @@ public class SignInWithAppleIdPublickey extends BaseGuavaCache<String, String> {
 
 
     @Override
-    protected String getValueWhenExpired(String key) {
-        System.out.println("load");
+    protected String getValueWhenExpired(String key) throws InterruptedException {
+        System.out.println("load..");
+        Thread.sleep(1000);
         return "publicKey";
     }
 
-    @Override
-    public BaseGuavaCache<String, String> setRefreshDuration(int refreshDuration) {
-        return super.setRefreshDuration(24);
-    }
-
-    @Override
-    public BaseGuavaCache<String, String> setRefreshTimeUnit(TimeUnit refreshTimeunit) {
-        return super.setRefreshTimeUnit(TimeUnit.HOURS);
-    }
-
-    @Override
-    public BaseGuavaCache<String, String> setExpireDuration(int expireDuration) {
-        return super.setExpireDuration(30);
-    }
-
-    @Override
-    public BaseGuavaCache<String, String> setExpireTimeUnit(TimeUnit expireTimeunit) {
-        return super.setExpireTimeUnit(TimeUnit.DAYS);
-    }
-
-    @Override
-    public BaseGuavaCache<String, String> setMaxSize(int maxSize) {
-        return super.setMaxSize(20);
-    }
 
     @Test
     public void test_Cache  () throws Exception {
+        this.setRefreshDuration(50);
+        this.setRefreshTimeUnit(TimeUnit.MILLISECONDS);
         String key1 = this.getValue("key1");
         System.out.println(key1);
-        String key2 = this.getValue("key2");
+        Thread.sleep(1000);
+        String key2 = this.getValue("key1");
         System.out.println(key2);
+        Thread.sleep(1000);
+        String key3 = this.getValue("key1");
+        System.out.println(key3);
     }
 }
