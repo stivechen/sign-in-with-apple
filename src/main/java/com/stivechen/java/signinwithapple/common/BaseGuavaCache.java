@@ -8,6 +8,8 @@ import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import lombok.extern.slf4j.Slf4j;
 
+import javax.annotation.PostConstruct;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -21,35 +23,44 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public abstract class BaseGuavaCache<K, V> {
 
-    /**缓存自动刷新周期*/
+    /**
+     * 缓存自动刷新周期
+     */
     protected int refreshDuration = 24;
-    /**缓存刷新周期时间格式*/
+    /**
+     * 缓存刷新周期时间格式
+     */
     protected TimeUnit refreshTimeunit = TimeUnit.MINUTES;
-    /**缓存过期时间（可选择*/
+    /**
+     * 缓存过期时间（可选择
+     */
     protected int expireDuration = -1;
-    /**缓存刷新周期时间格式*/
+    /**
+     * 缓存刷新周期时间格式
+     */
     protected TimeUnit expireTimeunit = TimeUnit.HOURS;
-    /**缓存最大容量*/
+    /**
+     * 缓存最大容量
+     */
     protected int maxSize = 16;
-    /**数据刷新线程池*/
+    /**
+     * 数据刷新线程池
+     */
     protected static ListeningExecutorService refreshPool = MoreExecutors.listeningDecorator(Executors.newFixedThreadPool(20));
 
-    /**缓存对象*/
+    /**
+     * 缓存对象
+     */
     private LoadingCache<K, V> cache = null;
 
-    /**
-     * 用于初始化缓存值
-     */
-    public abstract void loadValueWhenStarted();
 
     /**
      * 缓存失效后，重新加载逻辑
      *
      * @param key
      * @return
-     * @throws Exception
      */
-    protected abstract V getValueWhenExpired(K key) throws Exception;
+    protected abstract V getValueWhenExpired(K key);
 
     /**
      * 获取缓存
@@ -145,22 +156,26 @@ public abstract class BaseGuavaCache<K, V> {
                         cacheBuilder = cacheBuilder.expireAfterWrite(expireDuration, expireTimeunit);
                     }
 
-                    cache = cacheBuilder.build(new CacheLoader<K, V>() {
-                        @Override
-                        public V load(K key) throws Exception {
-                            return getValueWhenExpired(key);
-                        }
-
-                        @Override
-                        public ListenableFuture<V> reload(final K key,
-                                                          V oldValue) throws Exception {
-                            return refreshPool.submit(new Callable<V>() {
-                                public V call() throws Exception {
+                    cache = cacheBuilder
+                            .recordStats()//开始计时
+                            .build(new CacheLoader<K, V>() {
+                                @Override
+                                public V load(K key) throws Exception {
+                                    log.debug("load!" + key);
                                     return getValueWhenExpired(key);
                                 }
+
+                                @Override
+                                public ListenableFuture<V> reload(final K key,
+                                                                  V oldValue) throws Exception {
+                                    return refreshPool.submit(new Callable<V>() {
+                                        public V call() throws Exception {
+                                            log.debug("reload!" + key);
+                                            return getValueWhenExpired(key);
+                                        }
+                                    });
+                                }
                             });
-                        }
-                    });
                 }
             }
         }
