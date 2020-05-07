@@ -1,6 +1,7 @@
 package com.stivechen.java.signinwithapple.service.impl;
 
 import com.alibaba.fastjson.JSON;
+import com.stivechen.java.signinwithapple.common.BaseGuavaCache;
 import com.stivechen.java.signinwithapple.config.AppleIDConfig;
 import com.stivechen.java.signinwithapple.controller.form.AppleIDValidateForm;
 import com.stivechen.java.signinwithapple.dto.AppleIDResDTO;
@@ -42,15 +43,14 @@ import static com.stivechen.java.signinwithapple.constant.AppleIDConstant.*;
  * @since 1.0.0
  */
 @Slf4j
-public abstract class BaseSignInWithApple {
+public abstract class BaseSignInWithApple extends BaseGuavaCache<String, ApplePublicKey> {
 
     @Autowired
     private AppleIDConfig appleIDConfig;
     @Autowired
     private AppleIDValidateSAO appleIDValidateSAO;
 
-
-    protected AppleIDTokenClaims createAndValidateTokens(AppleIDValidateForm form) {
+    protected AppleIDTokenClaims createAndValidateTokens(AppleIDValidateForm form) throws Exception {
         //首次解析从Apple设备终端校验生成的identityToken
         AppleIDTokenClaims identityClaims = this.verifyToken(form.getIdentityToken(), "verifyIdentityToken");
 
@@ -90,7 +90,7 @@ public abstract class BaseSignInWithApple {
      * @param appleIDResDTO
      */
     private void checkResultInfo(AppleIDResDTO appleIDResDTO) {
-        Assert.isNull(appleIDResDTO, "AppleID validateAppleIDTokens return null!");
+        Assert.notNull(appleIDResDTO, "AppleID validateAppleIDTokens return null!");
 
         if (StringUtils.isNotBlank(appleIDResDTO.getError()) || StringUtils.isBlank(appleIDResDTO.getId_token())) {
             String errorMsg = appleIDResDTO.getError();
@@ -138,14 +138,15 @@ public abstract class BaseSignInWithApple {
      * @param scene 校验场景：首次交互+apple服务交互
      * @return
      */
-    private AppleIDTokenClaims verifyToken(String token, String scene) {
+    private AppleIDTokenClaims verifyToken(String token, String scene) throws Exception {
         AppleIDTokenClaims tokenClaims = new AppleIDTokenClaims();
         //因为https://appleid.apple.com/auth/keys提供了两个key，且会变，差点出事故，f**k
         int retryTimes = 0;
         int totalRetryTimes = -1;
 
-        ApplePublicKey applePublicKey = appleIDValidateSAO.getAppleIdPublicKey();
-        //TODO 待改造为guava
+        super.setExpireDuration(30);//设置guavaCache30天过期
+        super.setRefreshDuration(24);//设置guavaCache24小时刷新一次
+        ApplePublicKey applePublicKey = super.getValue(GUAVACACHEKEY_APPLEPUBLICKEY);
         if (null != applePublicKey) {
             List<ApplePublicKey.PKey> keys = applePublicKey.getKeys();
             if (keys != null && !keys.isEmpty()) {
@@ -255,5 +256,11 @@ public abstract class BaseSignInWithApple {
         return privateKey;
     }
 
+    @Override
+    protected ApplePublicKey getValueWhenExpired(String key) throws Exception {
+        ApplePublicKey applePublicKey = appleIDValidateSAO.getAppleIdPublicKey();
+        Assert.notNull(applePublicKey, "applePulicKey is null!");
+        return applePublicKey;
+    }
 
 }

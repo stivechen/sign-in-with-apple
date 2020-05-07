@@ -24,5 +24,9 @@ public class AppleIDConstant {
      */
     public static final String ISS_FIELD = "https://appleid.apple.com";
 
+    /**
+     * guava Cache 缓存key：applePublicKey
+     */
+    public static final String GUAVACACHEKEY_APPLEPUBLICKEY= "ApplePublicKey";
 
 }
